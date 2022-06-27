@@ -1,3 +1,4 @@
+#agregamos los import generales
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import tensorflow as tf
@@ -11,15 +12,17 @@ logger = tf.get_logger()
 
 logger.setLevel(logging.ERROR)
 
-
+#instalamos el set de datos:
+#mnist es la libreria
 dataset, metadata = tfds.load('mnist', as_supervised=True, with_info=True)
+#obtenemos los train data sets y los sets de evaluacion
 train_dataset, test_dataset = dataset['train'], dataset['test']
-
+#definimos etiquetas simples de texto para cada posible respuesta de la red
 class_names = [
     'Cero', 'Uno', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis',
     'Siete', 'Ocho', 'Nueve'
 ]
-
+#obtenemos la cantidad de ejemplos en variables
 num_train_examples = metadata.splits['train'].num_examples
 num_test_examples = metadata.splits['test'].num_examples
 
@@ -28,19 +31,22 @@ def normalize(images, labels):
     images = tf.cast(images, tf.float32)
     images /= 255
     return images, labels
-
+#funcion de normalizacion
 train_dataset = train_dataset.map(normalize)
 test_dataset = test_dataset.map(normalize)
 
 #Estructura de la red
+#primero indicamos la capa de entrada
 model = tf.keras.Sequential([
 	tf.keras.layers.Flatten(input_shape=(28,28,1)),
+	#agregamos capas ocultas con 64 neuronas cada una
 	tf.keras.layers.Dense(64, activation=tf.nn.relu),
 	tf.keras.layers.Dense(64, activation=tf.nn.relu),
+	#agregamos la capa de salida
 	tf.keras.layers.Dense(10, activation=tf.nn.softmax) #para clasificacion
 ])
 
-#Indicar las funciones a utilizar
+#Indicamos las funciones a utilizar
 model.compile(
 	optimizer='adam',
 	loss='sparse_categorical_crossentropy',
@@ -48,24 +54,27 @@ model.compile(
 )
 
 #Aprendizaje por lotes de 32 cada lote
-BATCHSIZE = 32
+#set de datos que usaremos
+BATCHSIZE = 32 #tamaño de lote de 32 
+#datos de entrenamiento ordenados de manera random 
 train_dataset = train_dataset.repeat().shuffle(num_train_examples).batch(BATCHSIZE)
 test_dataset = test_dataset.batch(BATCHSIZE)
+#....especificamos el tamaño del lote en ambas funciones (train y test)
 
-#Realizar el aprendizaje
+#Realizar el aprendizaje(entrenamiento)
 model.fit(
-	train_dataset, epochs=5,
-	steps_per_epoch=math.ceil(num_train_examples/BATCHSIZE) #No sera necesario pronto
+	train_dataset, epochs=5, #epocas a usar en el dataset para el entrenamiento
+	steps_per_epoch=math.ceil(num_train_examples/BATCHSIZE) #atributo de pasos por epoca
 )
 
 #Evaluar nuestro modelo ya entrenado, contra el dataset de pruebas
 test_loss, test_accuracy = model.evaluate(
 	test_dataset, steps=math.ceil(num_test_examples/32)
 )
-
+#imprimiendo resultado de la precision
 print("Resultado en las pruebas: ", test_accuracy)
 
-
+#Para ver los resultados de manera grafica : 
 for test_images, test_labels in test_dataset.take(1):
 	test_images = test_images.numpy()
 	test_labels = test_labels.numpy()
@@ -98,7 +107,9 @@ def plot_value_array(i, predictions_array, true_label):
 
 	thisplot[predicted_label].set_color('red')
 	thisplot[true_label].set_color('blue')
-
+#vamos a mostrar 15 ejemplos del set de evaluacion
+#aparecerá la imagen y debajo el numero que predijo la red
+#en azul en caso de correcto
 numrows=5
 numcols=3
 numimages = numrows*numcols
